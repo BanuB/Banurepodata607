@@ -1,0 +1,130 @@
+---
+title: "Week1Assignment DATA607"
+author: "Banu Boopalan"
+date: "8/31/2019"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    code_folding: hide
+  ioslides_presentation: default
+  pdf_document: default
+  slidy_presentation: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(plyr)
+library(dplyr)
+library(tidyverse)  ## loads many but not all "tidyverse" packages
+```
+
+## Section 1: Read in DataSet and Report  Summary
+
+```{r}
+#Read with factors - Stringasfactors = TRUE to show summary counts
+newdata <- read.csv(file="C:/Users/Banu/Documents/RScriptfiles/New folder/agaricus-lepiota.csv", header=FALSE, sep=",")
+names(newdata) <- c("classes","cap-shape:","cap-surface:","cap-color:","bruises:","odor:","gill-attachment:","gill-spacing:","gill-size:","gill-color:","stalk-shape:","stalk-root:","stalk-surface-above-ring:","stalk-surface-below-ring:","stalk-color-above-ring:","stalk-color-below-ring:","veil-type:","veil-color:","ring-number:","ring-type:","spore-print-color:","population:","habitat:") 
+names(newdata) <- gsub(":", "",names(newdata))
+names(newdata) <- gsub("-", "_",names(newdata))
+names(newdata)
+head(newdata)
+str(newdata)
+summary(newdata)   
+```
+
+
+## Section 2: Change levels for only 3 columns 
+```{r}
+#check levels and change level Classes
+levels(newdata$classes)[levels(newdata$classes)=="e"] <- "edible"
+levels(newdata$classes)[levels(newdata$classes)=="p"] <- "poisonous"
+#check levels and change level cap_shape
+levels(newdata$cap_shape)[levels(newdata$cap_shape)=="b"] <- "bell"
+levels(newdata$cap_shape)[levels(newdata$cap_shape)=="c"] <- "conical"
+levels(newdata$cap_shape)[levels(newdata$cap_shape)=="f"] <- "flat"
+levels(newdata$cap_shape)[levels(newdata$cap_shape)=="k"] <- "knobbed"
+levels(newdata$cap_shape)[levels(newdata$cap_shape)=="s"] <- "sunken"
+levels(newdata$cap_shape)[levels(newdata$cap_shape)=="x"] <- "convex"
+#check levels and change level cap_surface
+levels(newdata$cap_surface)[levels(newdata$cap_surface)=="f"] <- "fibrous"
+levels(newdata$cap_surface)[levels(newdata$cap_surface)=="g"] <- "grooves"
+levels(newdata$cap_surface)[levels(newdata$cap_surface)=="y"] <- "scaly"
+levels(newdata$cap_surface)[levels(newdata$cap_surface)=="s"] <- "smooth"
+
+for (n in names(newdata))
+  if (is.factor(newdata[[n]])) {
+    print (n)
+      print(levels(newdata[[n]]))
+  }
+
+```
+
+## Section 3: Use Tibble to change few more cols since changing levels using index was taking a while
+```{r}
+dftibble <- tibble::as.tibble(newdata)
+
+#cols4
+dftibble <- dftibble %>% 					
+  mutate(cap_color = case_when(
+    .$cap_color == "n" ~ "brown",
+    .$cap_color == "b" ~ "buff",
+    .$cap_color == "c" ~ "cinnamon",
+    .$cap_color == "g" ~ "gray",
+    .$cap_color == "p" ~ "pink",
+    .$cap_color == "u" ~ "purple",
+    .$cap_color == "e" ~ "red",
+    .$cap_color == "w" ~ "white",
+    .$cap_color == "y" ~ "yellow",
+    TRUE ~ "other"))
+#col5
+dftibble <- dftibble %>% mutate(bruises = case_when(
+  .$bruises == "t" ~ "bruises",
+  .$bruises == "f" ~ "no"
+  ,TRUE ~ "other"))
+#col12 
+dftibble <- dftibble %>% 
+  mutate(stalk_root = case_when(
+    .$stalk_root == "b" ~ "bulbous",
+    .$stalk_root == "c" ~ "club",
+    .$stalk_root == "u" ~ "cup",
+    .$stalk_root == "e" ~ "equal",
+    .$stalk_root == "z" ~ "rhiomorphus",
+    .$stalk_root == "r" ~ "rooted",
+    .$stalk_root == "?" ~ "missing"
+    ,TRUE ~ "other"))
+```
+
+## Section 3: Convert tibble back to dataframe and report summary
+```{r}
+#convert to factor
+dftibble <- mutate_at(dftibble, vars(cap_color, bruises,stalk_root), as.factor)
+head(dftibble)
+#convert back to dataframe
+finaldata <- data.frame(dftibble)
+nrow(finaldata)
+str(finaldata)
+```
+
+## Section 4: create subset with those missing and non missing on stalk_root
+```{r}
+#Use file with StringasFactors=FALSE
+allnonmissing <- finaldata[!finaldata$stalk_root == "missing",c(1,2:4,12) ] #subset rows with no missing for attribute
+Submissingrows <- finaldata[finaldata$stalk_root == "missing",c(1,2:4,12) ] #subset only missing rows 
+dim(allnonmissing)
+dim(Submissingrows)
+head(allnonmissing)
+head(Submissingrows)
+```
+## Section 5: create subset with some conditions on rows
+```{r}
+df1 <- subset(allnonmissing, cap_color == "yellow" & cap_surface == "scaly" )
+df2 <- subset(allnonmissing, cap_color %in% c("yellow","brown") & cap_surface == "scaly" )
+summary(df1)
+str(df1)
+head(df1)
+str(df2)
+summary(df2)
+head(df2)
+```
+
